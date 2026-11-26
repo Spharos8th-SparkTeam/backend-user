@@ -21,7 +21,9 @@ public class AdminAccountController {
     private final AdminAccountService adminAccountService;
 
     @GetMapping("/{userId}")
-    @Operation(summary = "관리자 조회", description = "데이터는 조회하지 않는다. 비밀번호는 응답에 포함하지 않는다.")
+    @Operation(
+            summary = "회원 상세 조회",
+            description = "데이터는 조회하지 않는다. userId는 회원 UUID다. 비밀번호, loginId, roleCode는 응답에 포함하지 않는다.")
     public AdminAccountResponseDto getAdminAccount(@PathVariable UUID userId) {
         return adminAccountService.getAdminAccount(userId);
     }

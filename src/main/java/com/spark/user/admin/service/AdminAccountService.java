@@ -11,7 +11,7 @@ public class AdminAccountService {
     // TODO: 관리자 조회 구현
     public AdminAccountResponseDto getAdminAccount(UUID userId) {
         return AdminAccountResponseDto.builder()
-                .adminId(userId)
+                .userId(userId)
                 .build();
     }
 }

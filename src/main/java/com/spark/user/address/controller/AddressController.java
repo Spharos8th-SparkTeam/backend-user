@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.List;
 import java.util.UUID;
 
 @RestController
@@ -27,9 +28,9 @@ public class AddressController {
     private final AddressService addressService;
 
     @GetMapping
-    @Operation(summary = "배송지 조회", description = "데이터는 조회하지 않는다.")
-    public AddressResponseDto getAddress(@PathVariable UUID userId) {
-        return addressService.getAddress(userId);
+    @Operation(summary = "배송지 목록 조회", description = "데이터는 조회하지 않는다. 응답은 배열이다.")
+    public List<AddressResponseDto> getAddresses(@PathVariable UUID userId) {
+        return List.of(addressService.getAddress(userId));
     }
 
     @PostMapping

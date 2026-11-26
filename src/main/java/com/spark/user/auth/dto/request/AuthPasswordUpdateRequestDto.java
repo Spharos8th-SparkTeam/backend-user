@@ -16,6 +16,11 @@ public class AuthPasswordUpdateRequestDto {
 
     @NotBlank
     @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
+    @Schema(description = "현재 비밀번호. 응답에 포함하지 않는다.", accessMode = Schema.AccessMode.WRITE_ONLY)
+    private String currentPassword;
+
+    @NotBlank
+    @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
     @Schema(description = "새 비밀번호. 응답에 포함하지 않는다.", accessMode = Schema.AccessMode.WRITE_ONLY)
     private String password;
 }

@@ -1,13 +1,17 @@
 package com.spark.user.auth.dto.request;
 
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+
+import java.util.List;
 
 @Getter
 @Setter
@@ -35,4 +39,8 @@ public class AuthSocialSignupRequestDto {
     @NotBlank
     @Pattern(regexp = "ko|en|ja|zh-CN|zh-TW")
     private String preferredLanguage;
+
+    @NotEmpty
+    @Valid
+    private List<TermsAgreementRequestDto> agreements;
 }

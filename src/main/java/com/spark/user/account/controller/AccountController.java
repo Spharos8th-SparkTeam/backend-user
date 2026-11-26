@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.List;
 import java.util.UUID;
 
 @RestController
@@ -27,9 +28,9 @@ public class AccountController {
     private final AccountService accountService;
 
     @GetMapping
-    @Operation(summary = "정산 계좌 조회", description = "계좌번호와 암호화 키는 응답에 포함하지 않는다.")
-    public AccountResponseDto getAccount(@PathVariable UUID userId) {
-        return accountService.getAccount(userId);
+    @Operation(summary = "정산 계좌 목록 조회", description = "응답은 배열이다. 계좌번호와 암호화 키는 응답에 포함하지 않는다.")
+    public List<AccountResponseDto> getAccounts(@PathVariable UUID userId) {
+        return List.of(accountService.getAccount(userId));
     }
 
     @PostMapping

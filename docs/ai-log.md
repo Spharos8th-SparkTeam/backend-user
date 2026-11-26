@@ -33,3 +33,11 @@
 - 공통 성공 본문과 Validation 오류 형식은 아직 정하지 않았다. 잘못된 본문은 현재 Spring 기본 400이다.
 - 껍데기 API는 저장하지 않는다. 요청 본문 필드가 정의서 원문과 다르면 원문 기준으로 고친다.
 - 커밋과 푸시는 하지 않았다.
+
+## 2026-11-27
+
+- `member` 스키마 기준으로 회원 API 요청·응답을 확정했다. 경로와 HTTP 메서드는 유지하고, 응답은 리소스 본문만 둔다. 공통 성공 래퍼와 시각 문자열 형식은 아직 정하지 않았다.
+- 소셜 로그인은 `provider`, `providerUserId`다. 목록 조회(배송지, 계좌, 약관)는 배열이다. 이메일 인증은 발송(201)과 확인(200)을 나누고, 확인 요청에만 인증번호 필드를 둔다. 응답에는 인증번호, 해시, 계좌번호, 암호문, 암호화 키, JWT, Long `id`를 넣지 않는다.
+- 가입 요청에 약관 동의 배열을 넣었다. 가입·로그인 응답은 공통 프로필(`userId`, `email`, `nickname`, `profileImageKey`, `preferredLanguage`, `status`, `emailVerifiedAt`)이다. 관리자 회원 조회는 회원 상세이며 `loginId`, `roleCode`는 빼 두었다.
+- 컨트롤러와 Request/Response DTO를 위 기준에 맞췄다. `AdminAccountResponseDto`의 식별자 필드가 `userId`로 바뀌어 `AdminAccountService` 빌더 호출 한 줄을 같이 고쳤다. 정의서 CSV는 수정하지 않았다.
+- `./gradlew test`는 통과했다. 껍데기는 저장하지 않는다.
