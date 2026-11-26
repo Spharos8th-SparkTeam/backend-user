@@ -1,0 +1,99 @@
+---
+description: Spring Boot 백엔드의 기능별 패키지 구조와 Layered Architecture 규칙
+globs:
+  - "src/main/java/**/*.java"
+alwaysApply: true
+---
+
+# Backend 패키지 구조 규칙
+
+## 기본 아키텍처
+
+- Spring Boot 백엔드는 기능별 패키지 구조를 기반으로 Layered Architecture를 적용한다.
+- 패키지는 common 패키지와 도메인별 패키지로 구분한다.
+- common 패키지에는 해당 서비스에서 공통으로 사용하는 설정 및 공통 엔티티를 배치한다.
+- 기능별 패키지 내부에 entity, dto, repository, service, controller를 배치한다.
+- 프로젝트 전체를 controller, service, repository 등 계층 기준으로만 분리하지 않는다.
+- 새로운 기능을 구현할 때 기존 패키지 구조와 네이밍을 우선 확인하고 동일한 패턴을 따른다.
+- 단순한 기능에 불필요한 클래스나 계층을 추가하지 않는다.
+- 사용하지 않는 패키지 및 클래스를 미리 생성하지 않는다.
+
+## 기본 패키지 구조
+
+각 서비스는 다음 패키지 구조를 기본으로 한다.
+
+```
+{service}/src/main/java/.../
+├── common/
+│   ├── config/
+│   │   └── SwaggerConfig.java
+│   └── entity/
+│       └── BaseEntity.java
+│
+└── {domain}/
+    ├── entity/
+    ├── dto/
+    │   ├── request/
+    │   └── response/
+    ├── repository/
+    ├── service/
+    └── controller/
+```
+
+- common은 해당 서비스 내에서 공통으로 사용하는 요소를 관리한다.
+- 도메인별로 최상위 패키지를 만들고, 그 안을 계층별로 나눈다.
+- 도메인 패키지명은 해당 기능의 목적이 명확하게 드러나도록 작성한다.
+- 서비스 내부에 여러 도메인이 존재할 경우 동일한 구조를 적용한다.
+
+예) todo 도메인
+
+- `todo/entity/Todo.java`
+- `todo/dto/request/TodoCreateRequest.java`
+- `todo/dto/response/TodoResponse.java`
+- `todo/repository/TodoRepository.java`
+- `todo/service/TodoService.java`
+- `todo/controller/TodoController.java`
+
+## common 패키지 규칙
+
+### config
+
+- 해당 서비스에서 공통으로 사용하는 설정 클래스를 관리한다.
+- SwaggerConfig 등 서비스 공통 설정 클래스를 배치한다.
+- 설정 클래스의 이름은 `{대상}Config` 형식으로 작성한다.
+- 특정 도메인의 비즈니스 로직을 포함하지 않는다.
+
+### entity
+
+- 여러 도메인의 엔티티에서 공통으로 사용하는 기반 클래스를 관리한다.
+- BaseEntity 등 공통 엔티티 클래스를 배치한다.
+- 생성일, 수정일 등 공통 필드를 관리한다.
+- BaseEntity의 공통 필드 및 구조는 기존 DB 설계와 팀 컨벤션을 따른다.
+- 특정 도메인의 엔티티는 common에 배치하지 않는다.
+
+## 계층별 책임
+
+- entity: DB 테이블 매핑 객체. 비즈니스 규칙이 있으면 엔티티 메서드로 둔다.
+- dto/request: 요청 바디 매핑 및 검증 어노테이션을 관리한다. 클래스명은 `{행위}Request` 형식으로 작성한다.
+- dto/response: 응답 전용 객체. 엔티티를 직접 반환하지 않는다. 클래스명은 `{대상}Response` 형식으로 작성한다.
+- repository: DB 접근만 담당한다. 비즈니스 로직을 포함하지 않는다.
+- service: 비즈니스 로직과 트랜잭션 경계를 담당한다.
+- controller: 요청/응답 처리와 service 호출만 담당한다.
+
+## 의존 방향
+
+- 기본 의존 방향은 controller → service → repository로 한다.
+- 하위 계층에서 상위 계층을 참조하지 않는다.
+- 도메인 패키지에서 common 패키지를 참조할 수 있다.
+- common 패키지는 특정 도메인 패키지에 의존하지 않는다.
+- 순환 참조를 금지한다.
+
+## 금지 사항
+
+- entity를 controller 응답으로 직접 반환하지 않는다.
+- controller에서 repository를 직접 호출하지 않는다.
+- controller 및 repository에 비즈니스 로직을 작성하지 않는다.
+- 특정 도메인에 종속된 클래스나 비즈니스 로직을 common에 배치하지 않는다.
+- 다른 MSA 서비스의 entity, repository를 직접 참조하지 않는다.
+- 팀에서 결정한 패키지 구조를 임의로 변경하지 않는다.
+- 새로운 공통 패키지 또는 계층이 필요한 경우 팀원과 협의한 후 추가한다.

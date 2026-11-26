@@ -1,0 +1,24 @@
+# Gradle & Java build
+.gradle/
+build/
+out/
+*.class
+*.jar
+*.war
+*.ear
+
+# Environment & secrets
+.env
+.env.*
+!.env.example
+*.pem
+
+# IDE & OS
+/.idea/
+*.iml
+.vscode/
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log

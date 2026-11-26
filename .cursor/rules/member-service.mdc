@@ -1,0 +1,46 @@
+---
+description: 회원 서비스 범위, 스키마, 부분 헥사고날, DTO/Swagger. 팀 룰이 우선한다.
+globs:
+  - "**/member-service/**"
+  - "**/member/**/*.java"
+alwaysApply: false
+---
+
+# 회원 서비스
+
+## 우선순위
+
+- `.cursor/rules/`의 팀 룰이 이 파일보다 우선한다. 충돌하면 팀 룰을 따른다.
+- 테이블과 컬럼은 `docs/ReSpark.sql`의 `member`, `backoffice`, `moderation`, `membership`, `member_query`만 기준으로 한다. 스키마에 없는 테이블·컬럼을 추가하지 않는다.
+- 보안, JWT, 예외 처리의 기존 형태는 `docs/backend-config`를 따른다. 패키지 구조는 `backend-structure`가 우선한다.
+
+## 범위
+
+- 회원, 이메일 인증, 약관 동의, 배송지, 정산 계좌, 프로필 카드, 신고·제재, 월간 멤버십, 관리자 계정을 다룬다.
+- 소셜 공급자는 `LINE`, `GOOGLE`, `X`, `APPLE`이다.
+- 저장 언어는 `ko`, `en`, `ja`, `zh-CN`, `zh-TW`이다.
+- 멤버십은 `SELLER_MONTHLY`와 `MONTHLY`를 중심으로 한다. 연간 플랜은 보류한다.
+- 행 참조는 FK 없이 UUID 값만 저장한다. API로 나가는 식별자는 `backend-uuid-convention`을 따른다. 그 룰이 서비스 내부 Long `id`를 요구하면 팀 룰이 우선하고, Long `id`는 API와 다른 서비스로 내보내지 않는다.
+- Kafka, Outbox, `processed_event` 발행·소비 코드는 만들지 않는다.
+
+## 구조
+
+- 패키지는 controller, service, repository, entity, dto의 기능별 계층을 유지한다.
+- 비즈니스 판단은 service 또는 entity에 둔다. HTTP, JPA, 메일, 비밀번호 해시, 계좌 암호, 소셜 토큰 확인은 그 바깥 코드가 담당한다.
+- 포트, 어댑터, 유스케이스 클래스를 기능마다 만들지 않는다. 구현을 바꿔 끼워야 하는 외부 경계에만 인터페이스 하나를 둔다.
+- 쓰지 않는 패키지, 클래스, 인터페이스를 미리 만들지 않는다.
+
+## DTO와 Swagger
+
+- DTO 접미사, request/response 분리, 엔티티 직접 반환 금지는 `backend-java-msa`와 `backend-structure`를 따른다.
+- URL, 상태 코드, 에러 문체는 `common-api`를 따른다. 확정되지 않은 공통 성공 본문은 새로 정하지 않고 확인한다.
+- 에러 응답은 `docs/backend-config`의 `ErrorResponseDTO`와 `ErrorCode`, `GlobalExceptionHandler` 형태를 따른다.
+- Swagger 설정은 `common/config`의 `SwaggerConfig`에 둔다. 컨트롤러에는 도메인 태그와 동작 설명을 달고, 요청·응답 DTO를 스키마로 노출한다.
+- 비밀번호, 인증번호, 계좌 암호문, 암호화 키, JWT, Long `id`는 응답 스키마에 넣지 않는다.
+
+## 제외
+
+- 예금주는 `holder_name` 하나만 둔다. 영문 전용 컬럼을 추가하지 않는다.
+- 통관번호 컬럼을 회원 스키마에 추가하지 않는다.
+- 결제 승인, 결제 수단 선택은 payment 범위다. 회원 서비스에 두지 않는다.
+- 위 스키마와 범위 밖의 컬럼, 테이블, 파일은 만들지 않는다.
