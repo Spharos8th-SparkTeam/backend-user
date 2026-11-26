@@ -1,0 +1,8 @@
+.git
+.github
+.gradle
+.cursor
+.idea
+build
+docs
+*.md

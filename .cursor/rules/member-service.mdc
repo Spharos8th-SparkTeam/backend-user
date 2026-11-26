@@ -1,6 +1,8 @@
 ---
 description: 회원 서비스 범위, 스키마, 부분 헥사고날, DTO/Swagger. 팀 룰이 우선한다.
 globs:
+  - "src/main/java/**/*.java"
+  - "src/main/resources/**/*.yml"
   - "**/member-service/**"
   - "**/member/**/*.java"
 alwaysApply: false
@@ -12,7 +14,8 @@ alwaysApply: false
 
 - `.cursor/rules/`의 팀 룰이 이 파일보다 우선한다. 충돌하면 팀 룰을 따른다.
 - 테이블과 컬럼은 `docs/ReSpark.sql`의 `member`, `backoffice`, `moderation`, `membership`, `member_query`만 기준으로 한다. 스키마에 없는 테이블·컬럼을 추가하지 않는다.
-- 보안, JWT, 예외 처리의 기존 형태는 `docs/backend-config`를 따른다. 패키지 구조는 `backend-structure`가 우선한다.
+- 보안, JWT, 예외 응답 필드는 `docs/backend-config`의 형태를 참고한다. 패키지 구조는 `backend-structure`가 우선한다.
+- `docs/backend-config`의 `core` 패키지, ErrorCode 번호(600·800·1000번대), 다른 도메인 전용 에러는 가져오지 않는다.
 
 ## 범위
 
@@ -21,7 +24,15 @@ alwaysApply: false
 - 저장 언어는 `ko`, `en`, `ja`, `zh-CN`, `zh-TW`이다.
 - 멤버십은 `SELLER_MONTHLY`와 `MONTHLY`를 중심으로 한다. 연간 플랜은 보류한다.
 - 행 참조는 FK 없이 UUID 값만 저장한다. API로 나가는 식별자는 `backend-uuid-convention`을 따른다. 그 룰이 서비스 내부 Long `id`를 요구하면 팀 룰이 우선하고, Long `id`는 API와 다른 서비스로 내보내지 않는다.
-- Kafka, Outbox, `processed_event` 발행·소비 코드는 만들지 않는다.
+- Kafka, Outbox, `processed_event` 발행·소비 코드는 만들지 않는다. 배포 워크플로에도 Kafka Secret을 넣지 않는다.
+
+## 이름
+
+- 실행 모듈, Docker 이미지, 컨테이너 이름은 `user-service`다.
+- 패키지 루트는 `com.spark.user`다.
+- 현재 Swagger 경로는 API 정의서를 따른다. `/api/v1/email`, `/api/v1/auth`, `/api/v1/users`, `/api/v1/terms`, `/api/v1/admin`.
+- 경로의 `userId`는 Long `id`가 아니라 `member_uuid`다.
+- 정의서에 없는 신고, 멤버십, 프로필 카드 API는 명세가 생기기 전에는 컨트롤러를 두지 않는다.
 
 ## 구조
 
@@ -29,12 +40,16 @@ alwaysApply: false
 - 비즈니스 판단은 service 또는 entity에 둔다. HTTP, JPA, 메일, 비밀번호 해시, 계좌 암호, 소셜 토큰 확인은 그 바깥 코드가 담당한다.
 - 포트, 어댑터, 유스케이스 클래스를 기능마다 만들지 않는다. 구현을 바꿔 끼워야 하는 외부 경계에만 인터페이스 하나를 둔다.
 - 쓰지 않는 패키지, 클래스, 인터페이스를 미리 만들지 않는다.
+- 예외 타입은 `common.exception`에 둔다. `common` 안에 도메인 로직을 넣지 않는다.
 
 ## DTO와 Swagger
 
-- DTO 접미사, request/response 분리, 엔티티 직접 반환 금지는 `backend-java-msa`와 `backend-structure`를 따른다.
+- 요청 클래스명은 `{행위}RequestDto`, 응답 클래스명은 `{대상}ResponseDto`다. 접미사는 팀 룰의 `Dto`를 따른다.
+- DTO 분리, 엔티티 직접 반환 금지는 `backend-java-msa`와 `backend-structure`를 따른다.
 - URL, 상태 코드, 에러 문체는 `common-api`를 따른다. 확정되지 않은 공통 성공 본문은 새로 정하지 않고 확인한다.
-- 에러 응답은 `docs/backend-config`의 `ErrorResponseDTO`와 `ErrorCode`, `GlobalExceptionHandler` 형태를 따른다.
+- 에러 응답 클래스명은 `ErrorResponseDto`다. 필드는 `docs/backend-config`의 `ErrorResponseDTO`와 같이 `timestamp`, `status`, `code`, `message`를 둔다.
+- 에러 메시지는 존댓말로 쓰고 "~습니다" 또는 "~합니다"로 끝낸다. `common-api` 예시 enum의 "~다" 문체와 번호 대역 예시는 따르지 않는다.
+- 내부 에러 코드는 `common-api`의 상태별 범위를 따른다. 범위가 없는 상태는 임의로 번호를 만들지 않고 확인한다.
 - Swagger 설정은 `common/config`의 `SwaggerConfig`에 둔다. 컨트롤러에는 도메인 태그와 동작 설명을 달고, 요청·응답 DTO를 스키마로 노출한다.
 - 비밀번호, 인증번호, 계좌 암호문, 암호화 키, JWT, Long `id`는 응답 스키마에 넣지 않는다.
 
@@ -43,4 +58,5 @@ alwaysApply: false
 - 예금주는 `holder_name` 하나만 둔다. 영문 전용 컬럼을 추가하지 않는다.
 - 통관번호 컬럼을 회원 스키마에 추가하지 않는다.
 - 결제 승인, 결제 수단 선택은 payment 범위다. 회원 서비스에 두지 않는다.
+- Prod Eureka 환경변수는 필요 여부가 확인되기 전에는 워크플로에 추가하지 않는다.
 - 위 스키마와 범위 밖의 컬럼, 테이블, 파일은 만들지 않는다.

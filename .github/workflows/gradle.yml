@@ -1,0 +1,143 @@
+name: Java CI with Gradle
+
+on:
+  # push:
+  #   branches: [ "main" ]
+  # pull_request:
+  #   branches: [ "main" ]
+  pull_request:
+    types: [closed]
+    branches: ["main", "develop"]
+
+permissions:
+  contents: read
+
+jobs:
+  CI-CD:
+    # if: github.event_name == 'push'
+    if: github.event.pull_request.merged == true
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.merge_commit_sha }}
+
+      - name: docker build & docker hub push
+        run: |
+          echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
+          docker build -t "${{ secrets.DOCKER_USERNAME }}/user-service:${{ github.run_number }}" .
+          docker push "${{ secrets.DOCKER_USERNAME }}/user-service:${{ github.run_number }}"
+
+  Deploy-Dev:
+    needs: CI-CD
+    # if: github.event_name == 'push'
+    if: ${{ github.event.pull_request.merged == true && github.event.pull_request.base.ref == 'develop' && needs['CI-CD'].result == 'success' }}
+    runs-on: [self-hosted, Windows, X64]
+    steps:
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Deploy to develop
+        shell: powershell
+        env:
+          DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+          IMAGE_TAG: ${{ github.run_number }}
+          SPRING_DATASOURCE_URL: ${{ secrets.SPRING_DATASOURCE_URL }}
+          SPRING_DATASOURCE_USERNAME: ${{ secrets.SPRING_DATASOURCE_USERNAME }}
+          SPRING_DATASOURCE_PASSWORD: ${{ secrets.SPRING_DATASOURCE_PASSWORD }}
+        run: |
+          $ErrorActionPreference = "Continue"
+          $PSNativeCommandUseErrorActionPreference = $false
+          $image = "$env:DOCKER_USERNAME/user-service:$env:IMAGE_TAG"
+          docker pull $image
+          if ($LASTEXITCODE -ne 0) { exit 1 }
+          $network = @(
+            docker network ls --format "{{.Name}}" |
+            Where-Object { $_ -eq "spharos" }
+          )
+          if ($network.Count -eq 0) {
+            docker network create spharos
+            if ($LASTEXITCODE -ne 0) { exit 1 }
+          }
+          $container = @(
+            docker ps -a --filter "name=user-service" --format "{{.Names}}" |
+            Where-Object { $_ -eq "user-service" }
+          )
+          if ($container.Count -gt 0) {
+            docker rm -f user-service
+            if ($LASTEXITCODE -ne 0) { exit 1 }
+          }
+          docker run -d `
+            --name user-service `
+            --restart unless-stopped `
+            --network spharos `
+            -e SPRING_PROFILES_ACTIVE=dev `
+            -e "SPRING_DATASOURCE_URL=$env:SPRING_DATASOURCE_URL" `
+            -e "SPRING_DATASOURCE_USERNAME=$env:SPRING_DATASOURCE_USERNAME" `
+            -e "SPRING_DATASOURCE_PASSWORD=$env:SPRING_DATASOURCE_PASSWORD" `
+            -e EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka:8761/eureka/ `
+            -e EUREKA_INSTANCE_PREFER_IP_ADDRESS=true `
+            $image
+          if ($LASTEXITCODE -ne 0) { exit 1 }
+          $running = docker inspect -f "{{.State.Running}}" user-service
+          if ($LASTEXITCODE -ne 0 -or $running -ne "true") { exit 1 }
+
+      - name: Check user-service Container
+        shell: powershell
+        run: |
+          $ErrorActionPreference = "Continue"
+          $PSNativeCommandUseErrorActionPreference = $false
+          docker ps --filter "name=^/user-service$"
+          if ($LASTEXITCODE -ne 0) { exit 1 }
+          $running = docker inspect -f "{{.State.Running}}" user-service
+          if ($LASTEXITCODE -ne 0 -or $running -ne "true") { exit 1 }
+
+  Deploy-Prod:
+    needs: CI-CD
+    # if: github.ref_name == 'main'
+    if: ${{ github.event.pull_request.merged == true && github.event.pull_request.base.ref == 'main' && needs['CI-CD'].result == 'success' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy User Service to AWS
+        uses: appleboy/ssh-action@v1.2.0
+        env:
+          DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+          DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
+          IMAGE_TAG: ${{ github.run_number }}
+          SPRING_DATASOURCE_URL: ${{ secrets.DB_URL_PROD }}
+          SPRING_DATASOURCE_USERNAME: ${{ secrets.DB_USERNAME_PROD }}
+          SPRING_DATASOURCE_PASSWORD: ${{ secrets.DB_PASSWORD_PROD }}
+        with:
+          host: ${{ secrets.HOST_EC2 }}
+          username: ubuntu
+          key: ${{ secrets.EC2_KEY }}
+          port: 22
+          envs: DOCKER_USERNAME,DOCKER_PASSWORD,IMAGE_TAG,SPRING_DATASOURCE_URL,SPRING_DATASOURCE_USERNAME,SPRING_DATASOURCE_PASSWORD
+          script: |
+            set -eu
+            IMAGE="$DOCKER_USERNAME/user-service:$IMAGE_TAG"
+            : "${SPRING_DATASOURCE_URL:?DB URL missing}"
+            : "${SPRING_DATASOURCE_USERNAME:?DB username missing}"
+            : "${SPRING_DATASOURCE_PASSWORD:?DB password missing}"
+            echo "$DOCKER_PASSWORD" | docker login \
+              -u "$DOCKER_USERNAME" \
+              --password-stdin
+            docker pull "$IMAGE"
+            docker network inspect spharos >/dev/null 2>&1 \
+              || docker network create spharos
+            docker rm -f user-service 2>/dev/null || true
+            docker run -d \
+              --name user-service \
+              --restart unless-stopped \
+              --network spharos \
+              -e "SPRING_DATASOURCE_URL=$SPRING_DATASOURCE_URL" \
+              -e "SPRING_DATASOURCE_USERNAME=$SPRING_DATASOURCE_USERNAME" \
+              -e "SPRING_DATASOURCE_PASSWORD=$SPRING_DATASOURCE_PASSWORD" \
+              -e "SPRING_PROFILES_ACTIVE=prod" \
+              "$IMAGE"
+            test "$(docker inspect -f '{{.State.Running}}' user-service)" = true
+            docker ps --filter "name=^/user-service$"
+            docker logs --tail 50 user-service
