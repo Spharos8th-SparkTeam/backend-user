@@ -133,9 +133,9 @@ jobs:
               --name user-service \
               --restart unless-stopped \
               --network spharos \
-              -e "SPRING_DATASOURCE_URL=$SPRING_DATASOURCE_URL" \
-              -e "SPRING_DATASOURCE_USERNAME=$SPRING_DATASOURCE_USERNAME" \
-              -e "SPRING_DATASOURCE_PASSWORD=$SPRING_DATASOURCE_PASSWORD" \
+              -e SPRING_DATASOURCE_URL \
+              -e SPRING_DATASOURCE_USERNAME \
+              -e SPRING_DATASOURCE_PASSWORD \
               -e "SPRING_PROFILES_ACTIVE=prod" \
               "$IMAGE"
             test "$(docker inspect -f '{{.State.Running}}' user-service)" = true

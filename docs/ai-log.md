@@ -41,3 +41,4 @@
 - 가입 요청에 약관 동의 배열을 넣었다. 가입·로그인 응답은 공통 프로필(`userId`, `email`, `nickname`, `profileImageKey`, `preferredLanguage`, `status`, `emailVerifiedAt`)이다. 관리자 회원 조회는 회원 상세이며 `loginId`, `roleCode`는 빼 두었다.
 - 컨트롤러와 Request/Response DTO를 위 기준에 맞췄다. `AdminAccountResponseDto`의 식별자 필드가 `userId`로 바뀌어 `AdminAccountService` 빌더 호출 한 줄을 같이 고쳤다. 정의서 CSV는 수정하지 않았다.
 - `./gradlew test`는 통과했다. 껍데기는 저장하지 않는다.
+- `Deploy-Prod`의 `docker run`만 DB 환경변수를 이름 매핑(`-e SPRING_DATASOURCE_URL` 등)으로 바꿨다. 배포 조건과 `SPRING_PROFILES_ACTIVE`는 그대로다.
