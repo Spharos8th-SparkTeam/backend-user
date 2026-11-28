@@ -1,4 +1,4 @@
-package com.spark.user.common.exception;
+package com.spark.user.common.error;
 
 import lombok.Getter;
 

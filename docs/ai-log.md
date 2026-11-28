@@ -42,3 +42,19 @@
 - 컨트롤러와 Request/Response DTO를 위 기준에 맞췄다. `AdminAccountResponseDto`의 식별자 필드가 `userId`로 바뀌어 `AdminAccountService` 빌더 호출 한 줄을 같이 고쳤다. 정의서 CSV는 수정하지 않았다.
 - `./gradlew test`는 통과했다. 껍데기는 저장하지 않는다.
 - `Deploy-Prod`의 `docker run`만 DB 환경변수를 이름 매핑(`-e SPRING_DATASOURCE_URL` 등)으로 바꿨다. 배포 조건과 `SPRING_PROFILES_ACTIVE`는 그대로다.
+
+## 2026-11-28
+
+- 예외 패키지를 `com.spark.user.common.exception`에서 `com.spark.user.common.error`로 옮겼다. 클래스 내용과 응답 필드는 그대로다.
+- 현재 참조만 맞췄다. `member-service.mdc`의 예외 패키지 문장, `common-api.mdc` glob, README 디렉터리 표기. `common/entity`는 공통 베이스 엔티티가 없어 만들지 않았다.
+- `./gradlew test`는 통과했다. Java 17, Spring Boot 4.0.10, Gateway 경로 `/api/v1/members/**`와 정의서 경로의 차이는 코드에서 바꾸지 않았다.
+
+## 2026-11-28
+
+- Java 버전 표기를 17로 통일했다. `build.gradle` toolchain, `Dockerfile` Temurin 17, README다. 룰 파일은 수정하지 않았다.
+- `./gradlew test`는 통과했다. 컴파일과 테스트가 다시 실행되었다.
+
+## 2026-11-28
+
+- `docs/ReSpark.sql`에서 user-service용 테이블 11개와 `terms_document` 초기 INSERT만 `docs/sql/member-schema.sql`로 추출했다. 외래키 없는 UUID 참조, COMMENT, CHECK, 인덱스는 원본 그대로다.
+- `outbox_event`, `processed_event`, 다른 서비스 스키마는 넣지 않았다. 커밋과 푸시는 하지 않았다.

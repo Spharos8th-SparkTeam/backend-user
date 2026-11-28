@@ -14,7 +14,7 @@ ReSpark 회원 서비스다. 회원, 이메일 인증, 약관, 배송지, 정산
 
 ## 기술 스택
 
-- Java 21
+- Java 17
 - Spring Boot 4.0.10
 - springdoc-openapi 3.2.0
 - Gradle 9
@@ -31,7 +31,7 @@ ReSpark 회원 서비스다. 회원, 이메일 인증, 약관, 배송지, 정산
 src/main/java/com/spark/user/
 ├── common/
 │   ├── config/
-│   └── exception/
+│   └── error/
 ├── member/entity/
 ├── email/
 ├── auth/

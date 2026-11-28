@@ -1,4 +1,4 @@
-package com.spark.user.common.exception;
+package com.spark.user.common.error;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;

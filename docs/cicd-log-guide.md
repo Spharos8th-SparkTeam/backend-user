@@ -174,7 +174,7 @@ jobs:
           SPRING_DATASOURCE_PASSWORD: ${{ secrets.DB_PASSWORD_PROD }}
         with:
           host: ${{ secrets.HOST_EC2 }}
-          username: <SSH_USER>
+          username: ubuntu
           key: ${{ secrets.EC2_KEY }}
           port: 22
           envs: DOCKER_USERNAME,DOCKER_PASSWORD,IMAGE_TAG,SPRING_DATASOURCE_URL,SPRING_DATASOURCE_USERNAME,SPRING_DATASOURCE_PASSWORD
